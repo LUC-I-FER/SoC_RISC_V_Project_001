@@ -1,44 +1,50 @@
 # FPGA-Based RISC-V System-on-Chip (SoC)
 
-> A modular FPGA-based RISC-V System-on-Chip designed from the ground up using Verilog, featuring custom communication peripherals, a memory-mapped architecture, and bare-metal firmware support.
+> A modular FPGA-based RISC-V System-on-Chip implemented on a Xilinx Spartan-7 FPGA using Verilog. The project focuses on designing a complete embedded platform around a RISC-V processor, including memory, custom peripherals, a memory-mapped interconnect, and bare-metal firmware.
 
 ---
 
 # Project Goal
 
-The primary objective of this project is to design and implement a complete RISC-V based System-on-Chip (SoC) on a Xilinx Spartan-7 FPGA.
+The objective of this project is to design and implement a modular RISC-V based System-on-Chip (SoC) capable of executing bare-metal applications while interfacing with external hardware through industry-standard communication peripherals.
 
-Unlike projects that only instantiate an existing processor, this project focuses on understanding and implementing the complete embedded system architecture around the processor.
+Rather than focusing only on processor implementation, this project emphasizes complete SoC design, including:
 
-The final system will be capable of running bare-metal C programs while communicating with external devices through industry-standard communication protocols.
+- Processor integration
+- Memory subsystem
+- Bus architecture
+- Peripheral design
+- Hardware/software co-design
+- Verification
+- FPGA implementation
 
 ---
 
 # Long-Term Vision
 
-The project aims to provide practical experience in
+This project is intended to simulate the workflow used by semiconductor companies such as Qualcomm, AMD, Intel, NXP, Texas Instruments, Synopsys, and Cadence.
 
-- Computer Architecture
-- Digital System Design
+The project aims to strengthen practical experience in:
+
+- RTL Design
 - FPGA Design
+- Computer Architecture
 - Embedded Systems
-- Hardware/Software Co-design
-- RTL Development
-- Verification
+- SoC Integration
 - Memory-Mapped Architectures
-
-This project is intended to simulate the development workflow used in semiconductor companies such as Qualcomm, AMD, Intel, NXP, Texas Instruments, Synopsys, and Cadence.
+- Verification
+- Bare-Metal Firmware Development
 
 ---
 
-# Current Hardware Platform
+# Development Platform
 
 ## FPGA
 
 - Xilinx Spartan-7
 - Device: XC7S50CSGA324-2
 
-## Development Software
+## Development Environment
 
 - Vivado 2024.1
 
@@ -51,59 +57,70 @@ This project is intended to simulate the development workflow used in semiconduc
 # System Architecture
 
 ```
-                    +----------------------+
-                    |      RISC-V CPU      |
-                    +----------+-----------+
-                               |
-                     Memory-Mapped Bus
-                               |
-        +-----------+----------+-----------+-----------+
-        |           |          |           |           |
-      Boot ROM     RAM       UART        SPI         I²C
-        |                                   |
-      GPIO                               Timer
-                               |
+                     +----------------------+
+                     |     RISC-V CPU       |
+                     |     (PicoRV32)       |
+                     +----------+-----------+
+                                |
+                          CPU Wrapper
+                                |
+                    Memory-Mapped Interconnect
+                                |
+      +-----------+-------------+-------------+-------------+
+      |           |             |             |             |
+   Boot ROM      RAM          UART          SPI           I²C
+      |                                          |
+     GPIO                                      Timer
+                                |
                      Interrupt Controller
 ```
 
 ---
 
-# CPU Strategy
+# Development Strategy
 
-Instead of immediately developing a custom RISC-V processor, the first version of the SoC will use the open-source PicoRV32 processor.
+The project is divided into two major phases.
 
-This allows development to focus on:
+## Phase 1
 
-- System integration
-- Peripheral design
-- Memory architecture
-- Bus design
-- Firmware development
+Develop a complete working SoC using the open-source PicoRV32 processor.
 
-After completing the SoC, the PicoRV32 core can be replaced with a custom RISC-V implementation without changing the rest of the architecture.
+The focus is on:
 
-This incremental approach enables continuous progress while keeping the project achievable.
+- Memory subsystem
+- Address decoder
+- Bus architecture
+- Peripheral development
+- Firmware
+- FPGA implementation
+
+## Phase 2
+
+Replace PicoRV32 with a custom-designed RV32I processor while preserving the surrounding SoC architecture.
+
+This allows the custom processor to immediately reuse all existing peripherals without redesigning the entire system.
 
 ---
 
 # Why PicoRV32?
 
-The following open-source RISC-V processors were evaluated:
+Several open-source RISC-V processors were evaluated.
 
-| CPU | Language | Notes |
-|------|----------|------|
+| Processor | HDL | Purpose |
+|------------|-----|---------|
 | PicoRV32 | Verilog | Selected |
-| Ibex | SystemVerilog | Industrial CPU |
+| Ibex | SystemVerilog | Industrial Core |
 | CV32E40P | SystemVerilog | OpenHW Core |
-| VexRiscv | Scala | Highly configurable |
+| VexRiscv | Scala | FPGA Optimized |
 
 PicoRV32 was selected because:
 
-- Pure Verilog
-- Small resource utilization
+- Pure Verilog implementation
+- Lightweight design
 - Excellent documentation
 - Easy FPGA integration
-- Large community support
+- Well-tested open-source project
+- Allows focusing on SoC development before CPU development
 
 Repository:
 
@@ -111,13 +128,30 @@ https://github.com/YosysHQ/picorv32
 
 ---
 
+# Third-Party Components
+
+The project separates external IP from custom RTL.
+
+```
+third_party/
+    picorv32/
+```
+
+The PicoRV32 source code will remain unmodified.
+
+A custom CPU wrapper will interface the processor with the rest of the SoC.
+
+This separation allows future replacement of PicoRV32 with a custom processor without modifying the remaining architecture.
+
+---
+
 # Planned Features
 
 ## Processor
 
-- RV32I Instruction Set
-- Open-source PicoRV32 (Phase 1)
-- Custom CPU (Phase 2)
+- RV32I ISA
+- PicoRV32 Integration (Phase 1)
+- Custom RV32I Processor (Phase 2)
 
 ---
 
@@ -139,15 +173,15 @@ https://github.com/YosysHQ/picorv32
 
 ### SPI
 
-- Master mode
-- Multiple SPI modes
-- Configurable clock
+- Master Mode
+- Multiple SPI Modes
+- Configurable Clock Divider
 
 ### I²C
 
-- Master mode
-- ACK/NACK support
-- START/STOP generation
+- Master Mode
+- START / STOP generation
+- ACK / NACK support
 
 ---
 
@@ -160,10 +194,10 @@ https://github.com/YosysHQ/picorv32
 
 ---
 
-# Memory Map (Planned)
+# Planned Memory Map
 
-| Address | Device |
-|----------|--------|
+| Address | Peripheral |
+|----------|------------|
 | 0x00000000 | Boot ROM |
 | 0x10000000 | RAM |
 | 0x20000000 | UART |
@@ -174,42 +208,22 @@ https://github.com/YosysHQ/picorv32
 
 ---
 
-# Software
-
-The SoC will execute bare-metal RISC-V applications written in C.
-
-Example:
-
-```c
-#define UART_TX (*(volatile unsigned int*)0x20000000)
-
-int main()
-{
-    UART_TX = 'H';
-    UART_TX = 'i';
-
-    while(1);
-}
-```
-
----
-
 # Repository Structure
 
 ```
-SoC_Project/
-│
+SoC_Project_001/
+
 ├── rtl/
+│   ├── top/
 │   ├── cpu/
 │   ├── bus/
 │   ├── memory/
 │   ├── peripherals/
-│   │     ├── uart/
-│   │     ├── spi/
-│   │     ├── i2c/
-│   │     ├── gpio/
-│   │     └── timer/
+│   ├── interrupt/
 │   └── common/
+│
+├── third_party/
+│   └── picorv32/
 │
 ├── constraints/
 │
@@ -219,32 +233,51 @@ SoC_Project/
 │
 ├── docs/
 │
-└── README.md
+├── scripts/
+│
+├── README.md
+│
+└── .gitignore
 ```
 
 ---
 
 # Development Roadmap
 
-## Phase 1
+## Milestone 1
 
-- Project setup
-- Vivado configuration
-- FPGA verification
+Project Setup
 
----
-
-## Phase 2
-
-- Integrate PicoRV32
-- Instruction ROM
-- Data RAM
+- Repository structure
+- Vivado project
+- Documentation
+- PicoRV32 integration
 
 ---
 
-## Phase 3
+## Milestone 2
 
-Develop custom peripherals
+Memory Subsystem
+
+- Boot ROM
+- RAM
+- Memory Controller
+
+---
+
+## Milestone 3
+
+Bus Architecture
+
+- Address Decoder
+- Memory-Mapped Interconnect
+- Peripheral Selection
+
+---
+
+## Milestone 4
+
+Peripheral Development
 
 - UART
 - SPI
@@ -254,63 +287,48 @@ Develop custom peripherals
 
 ---
 
-## Phase 4
-
-Develop memory-mapped interconnect
-
-- Address decoder
-- Peripheral selection
-- Bus arbitration (if required)
-
----
-
-## Phase 5
+## Milestone 5
 
 Firmware
 
-- Toolchain setup
+- RISC-V GCC Toolchain
+- Bare-Metal Runtime
+- Peripheral Drivers
 - Hello World
-- Peripheral drivers
-- Bare-metal applications
+- Peripheral Demonstrations
 
 ---
 
-## Phase 6
+## Milestone 6
 
-Custom RISC-V Processor
+Custom RV32I Processor
 
-Replace PicoRV32 with a self-designed RV32I processor while maintaining compatibility with the existing SoC architecture.
-
----
-
-# Research Summary
-
-## Why not immediately build a CPU?
-
-Developing a processor from scratch significantly increases project complexity.
-
-A complete processor requires:
-
-- Instruction Fetch
-- Decoder
-- Register File
-- ALU
-- Branch Logic
-- Memory Interface
-- Exception Handling
-- Verification
-
-This can take several months before any external hardware can be controlled.
-
-Using PicoRV32 allows early development of the complete SoC while still leaving the processor as a future enhancement.
+Replace PicoRV32 while maintaining compatibility with the existing SoC.
 
 ---
 
-## Engineering Philosophy
+# Verification Strategy
 
-This project emphasizes modular hardware design.
+Every RTL module will include dedicated simulations before integration.
 
-Each hardware block is designed as an independent reusable IP core.
+Examples:
+
+- UART Testbench
+- SPI Testbench
+- I²C Testbench
+- RAM Testbench
+- ROM Testbench
+- Complete SoC Testbench
+
+Simulation will be performed before FPGA implementation.
+
+---
+
+# Engineering Philosophy
+
+The project follows a modular IP-based design methodology.
+
+Each subsystem is developed independently.
 
 Examples:
 
@@ -320,15 +338,18 @@ Examples:
 - Timer IP
 - GPIO IP
 
-These modules communicate through a common memory-mapped interface, enabling future processor replacement without redesigning the peripherals.
+Each IP communicates using a common memory-mapped interface, making the architecture reusable and scalable.
 
 ---
 
 # Future Enhancements
 
-- Five-stage pipeline CPU
-- Interrupt pipeline
-- Cache memory
+- Custom 5-stage RV32I Pipeline
+- Hazard Detection
+- Forwarding Unit
+- CSR Support
+- Interrupt Pipeline
+- Cache Memory
 - DMA Controller
 - AXI/APB Bus
 - RTOS Support
@@ -336,30 +357,48 @@ These modules communicate through a common memory-mapped interface, enabling fut
 - SDRAM Controller
 - Ethernet MAC
 - USB Controller
-- JTAG Debug
-- Hardware Debug Unit
+- JTAG Debug Interface
+- Performance Counters
 
 ---
 
-# Learning Outcomes
+# Learning Objectives
 
-This project aims to strengthen knowledge in:
+Through this project, the following topics will be explored:
 
 - Verilog RTL Design
 - FPGA Development
 - Computer Architecture
-- Digital Logic Design
-- Embedded Systems
+- SoC Design
 - Memory-Mapped Architectures
-- Hardware Verification
 - Communication Protocols
-- Bare-Metal Firmware Development
+- Hardware Verification
+- Embedded Firmware Development
 - Hardware/Software Co-design
 
 ---
 
-# Disclaimer
+# Project Status
 
-The first version of this project uses the open-source PicoRV32 processor to accelerate SoC development.
+Current Stage:
 
-The long-term objective is to replace the processor with a custom-designed RISC-V implementation while preserving the surrounding system architecture.
+- Repository initialized
+- Project architecture defined
+- Vivado environment configured
+- Folder hierarchy established
+- Evaluation of RISC-V cores completed
+- PicoRV32 selected as Phase 1 processor
+
+Next Milestone:
+
+- Integrate PicoRV32 using a custom CPU wrapper
+- Design Boot ROM
+- Implement the memory subsystem
+
+---
+
+# License
+
+The custom RTL, documentation, and firmware in this repository are developed as part of this project.
+
+The PicoRV32 processor remains the property of its original authors and is included under its respective open-source license.
