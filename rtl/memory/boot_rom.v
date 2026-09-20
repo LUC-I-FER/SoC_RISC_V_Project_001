@@ -6,7 +6,7 @@ module boot_rom(
     output reg         ready
 );
 
-    reg [31:0] memory [ 0 : 256 - 1];
+    reg [31:0] memory [256];
     initial begin
         $readmemh("firmware/hex/boot.hex", memory);
     end
