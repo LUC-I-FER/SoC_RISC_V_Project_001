@@ -1,0 +1,80 @@
+module soc_top (
+    input wire clk,
+    input wire resetn
+);
+
+    // --- Internal Wires ---
+
+    // CPU Master Signals
+    wire        cpu_valid;
+    wire        cpu_ready;
+    wire [31:0] cpu_addr;
+    wire [31:0] cpu_wdata;
+    wire [ 3:0] cpu_wstrb;
+    wire [31:0] cpu_rdata;
+
+    // ROM Slave Signals
+    wire        rom_valid;
+    wire        rom_ready;
+    wire [31:0] rom_rdata;
+
+    // RAM Slave Signals
+    wire        ram_valid;
+    wire        ram_ready;
+    wire [31:0] ram_rdata;
+
+
+    // --- Module Instantiations ---
+
+    // 1. CPU
+    cpu_wrapper u_cpu (
+        .clk       (clk),
+        .resetn    (resetn),
+        .mem_valid (cpu_valid),
+        .mem_instr (), // Not used at SoC top level
+        .mem_ready (cpu_ready),
+        .mem_addr  (cpu_addr),
+        .mem_wdata (cpu_wdata),
+        .mem_wstrb (cpu_wstrb),
+        .mem_rdata (cpu_rdata)
+    );
+
+    // 2. Interconnect Bus
+    bus u_bus (
+        .cpu_valid (cpu_valid),
+        .cpu_addr  (cpu_addr),
+        .cpu_wdata (cpu_wdata),
+        .cpu_wstrb (cpu_wstrb),
+        .cpu_ready (cpu_ready),
+        .cpu_rdata (cpu_rdata),
+
+        .rom_valid (rom_valid),
+        .rom_ready (rom_ready),
+        .rom_rdata (rom_rdata),
+
+        .ram_valid (ram_valid),
+        .ram_ready (ram_ready),
+        .ram_rdata (ram_rdata)
+    );
+
+    // 3. Boot ROM
+    boot_rom u_rom (
+        .clk   (clk),
+        .valid (rom_valid),
+        .addr  (cpu_addr),
+        .rdata (rom_rdata),
+        .ready (rom_ready)
+    );
+
+    // 4. Data RAM
+    ram u_ram (
+        .clk   (clk),
+        .valid (ram_valid),
+        .addr  (cpu_addr),
+        .wdata (cpu_wdata),
+        .wstrb (cpu_wstrb),
+        .ready (ram_ready),
+        .rdata (ram_rdata)
+    );
+
+endmodule
