@@ -17,10 +17,8 @@ module cpu_wrapper(
         .ENABLE_REGS_DUALPORT(1),
         .BARREL_SHIFTER(1),
         .TWO_STAGE_SHIFT(0),
-        .PROGAPI_QREGS(0),
         .CATCH_MISALIGN(1),
-        .CATCH_ILLINSN(1),
-        .PROGAPI_QREGS(0)
+        .CATCH_ILLINSN(1)
     ) cpu(
         .clk       (clk),
         .resetn    (resetn),
