@@ -7,13 +7,13 @@ Disassembly of section .text:
 00000000 <_start>:
    0:	10001117          	auipc	sp,0x10001
    4:	00010113          	mv	sp,sp
-   8:	0e8000ef          	jal	f0 <main>
+   8:	178000ef          	jal	180 <main>
 
 0000000c <trap>:
    c:	0000006f          	j	c <trap>
 
 00000010 <uart_putc>:
-  10:	fe010113          	addi	sp,sp,-32 # 10000fe0 <main+0x10000ef0>
+  10:	fe010113          	addi	sp,sp,-32 # 10000fe0 <main+0x10000e60>
   14:	00812e23          	sw	s0,28(sp)
   18:	02010413          	addi	s0,sp,32
   1c:	00050793          	mv	a5,a0
@@ -74,30 +74,101 @@ Disassembly of section .text:
   e8:	01010113          	addi	sp,sp,16
   ec:	00008067          	ret
 
-000000f0 <main>:
+000000f0 <gpio_set_dir>:
   f0:	fe010113          	addi	sp,sp,-32
-  f4:	00112e23          	sw	ra,28(sp)
-  f8:	00812c23          	sw	s0,24(sp)
-  fc:	02010413          	addi	s0,sp,32
- 100:	12400513          	li	a0,292
- 104:	f55ff0ef          	jal	58 <uart_puts>
- 108:	fa5ff0ef          	jal	ac <uart_getc>
- 10c:	00050793          	mv	a5,a0
- 110:	fef407a3          	sb	a5,-17(s0)
- 114:	fef44783          	lbu	a5,-17(s0)
- 118:	00078513          	mv	a0,a5
- 11c:	ef5ff0ef          	jal	10 <uart_putc>
- 120:	fe9ff06f          	j	108 <main+0x18>
- 124:	20436f53          	.insn	4, 0x20436f53
- 128:	6f42                	.insn	2, 0x6f42
- 12a:	6465746f          	jal	s0,57770 <main+0x57680>
- 12e:	2021                	.insn	2, 0x2021
- 130:	74696157          	.insn	4, 0x74696157
- 134:	6e69                	.insn	2, 0x6e69
- 136:	6f662067          	.insn	4, 0x6f662067
- 13a:	2072                	.insn	2, 0x2072
- 13c:	6e69                	.insn	2, 0x6e69
- 13e:	7570                	.insn	2, 0x7570
- 140:	2e74                	.insn	2, 0x2e74
- 142:	2e2e                	.insn	2, 0x2e2e
- 144:	000a                	.insn	2, 0x000a
+  f4:	00812e23          	sw	s0,28(sp)
+  f8:	02010413          	addi	s0,sp,32
+  fc:	00050793          	mv	a5,a0
+ 100:	fef407a3          	sb	a5,-17(s0)
+ 104:	300007b7          	lui	a5,0x30000
+ 108:	fef44703          	lbu	a4,-17(s0)
+ 10c:	00e7a023          	sw	a4,0(a5) # 30000000 <_stack_top+0x1ffff000>
+ 110:	00000013          	nop
+ 114:	01c12403          	lw	s0,28(sp)
+ 118:	02010113          	addi	sp,sp,32
+ 11c:	00008067          	ret
+
+00000120 <gpio_write>:
+ 120:	fe010113          	addi	sp,sp,-32
+ 124:	00812e23          	sw	s0,28(sp)
+ 128:	02010413          	addi	s0,sp,32
+ 12c:	00050793          	mv	a5,a0
+ 130:	fef407a3          	sb	a5,-17(s0)
+ 134:	300007b7          	lui	a5,0x30000
+ 138:	00478793          	addi	a5,a5,4 # 30000004 <_stack_top+0x1ffff004>
+ 13c:	fef44703          	lbu	a4,-17(s0)
+ 140:	00e7a023          	sw	a4,0(a5)
+ 144:	00000013          	nop
+ 148:	01c12403          	lw	s0,28(sp)
+ 14c:	02010113          	addi	sp,sp,32
+ 150:	00008067          	ret
+
+00000154 <gpio_read>:
+ 154:	ff010113          	addi	sp,sp,-16
+ 158:	00812623          	sw	s0,12(sp)
+ 15c:	01010413          	addi	s0,sp,16
+ 160:	300007b7          	lui	a5,0x30000
+ 164:	00878793          	addi	a5,a5,8 # 30000008 <_stack_top+0x1ffff008>
+ 168:	0007a783          	lw	a5,0(a5)
+ 16c:	0ff7f793          	zext.b	a5,a5
+ 170:	00078513          	mv	a0,a5
+ 174:	00c12403          	lw	s0,12(sp)
+ 178:	01010113          	addi	sp,sp,16
+ 17c:	00008067          	ret
+
+00000180 <main>:
+ 180:	fe010113          	addi	sp,sp,-32
+ 184:	00112e23          	sw	ra,28(sp)
+ 188:	00812c23          	sw	s0,24(sp)
+ 18c:	02010413          	addi	s0,sp,32
+ 190:	1d400513          	li	a0,468
+ 194:	ec5ff0ef          	jal	58 <uart_puts>
+ 198:	00f00513          	li	a0,15
+ 19c:	f55ff0ef          	jal	f0 <gpio_set_dir>
+ 1a0:	00500513          	li	a0,5
+ 1a4:	f7dff0ef          	jal	120 <gpio_write>
+ 1a8:	1f400513          	li	a0,500
+ 1ac:	eadff0ef          	jal	58 <uart_puts>
+ 1b0:	efdff0ef          	jal	ac <uart_getc>
+ 1b4:	00050793          	mv	a5,a0
+ 1b8:	fef407a3          	sb	a5,-17(s0)
+ 1bc:	fef44783          	lbu	a5,-17(s0)
+ 1c0:	00078513          	mv	a0,a5
+ 1c4:	e4dff0ef          	jal	10 <uart_putc>
+ 1c8:	00a00513          	li	a0,10
+ 1cc:	f55ff0ef          	jal	120 <gpio_write>
+ 1d0:	fe1ff06f          	j	1b0 <main+0x30>
+ 1d4:	20436f53          	.insn	4, 0x20436f53
+ 1d8:	6f42                	.insn	2, 0x6f42
+ 1da:	6465746f          	jal	s0,57820 <main+0x576a0>
+ 1de:	2021                	.insn	2, 0x2021
+ 1e0:	6554                	.insn	2, 0x6554
+ 1e2:	6e697473          	.insn	4, 0x6e697473
+ 1e6:	50472067          	.insn	4, 0x50472067
+ 1ea:	4f49                	.insn	2, 0x4f49
+ 1ec:	2e2e                	.insn	2, 0x2e2e
+ 1ee:	0a2e                	.insn	2, 0x0a2e
+ 1f0:	0000                	.insn	2, 0x
+ 1f2:	0000                	.insn	2, 0x
+ 1f4:	4f495047          	.insn	4, 0x4f495047
+ 1f8:	4c20                	.insn	2, 0x4c20
+ 1fa:	4445                	.insn	2, 0x4445
+ 1fc:	65732073          	.insn	4, 0x65732073
+ 200:	2074                	.insn	2, 0x2074
+ 202:	6f74                	.insn	2, 0x6f74
+ 204:	3020                	.insn	2, 0x3020
+ 206:	3078                	.insn	2, 0x3078
+ 208:	2e35                	.insn	2, 0x2e35
+ 20a:	5720                	.insn	2, 0x5720
+ 20c:	6961                	.insn	2, 0x6961
+ 20e:	6974                	.insn	2, 0x6974
+ 210:	676e                	.insn	2, 0x676e
+ 212:	6620                	.insn	2, 0x6620
+ 214:	5520726f          	jal	tp,7766 <main+0x75e6>
+ 218:	5241                	.insn	2, 0x5241
+ 21a:	2054                	.insn	2, 0x2054
+ 21c:	6e69                	.insn	2, 0x6e69
+ 21e:	7570                	.insn	2, 0x7570
+ 220:	2e74                	.insn	2, 0x2e74
+ 222:	2e2e                	.insn	2, 0x2e2e
+ 224:	000a                	.insn	2, 0x000a

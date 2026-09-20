@@ -1,8 +1,9 @@
 module soc_top (
-    input  wire clk,
-    input  wire resetn,
-    output wire tx,
-    input  wire rx         // NEW: Expose UART RX pin to the outside world
+    input  wire        clk,
+    input  wire        resetn,
+    output wire        tx,
+    input  wire        rx,
+    inout  wire [7:0]  gpio        // NEW: 8-bit bidirectional GPIO port
 );
 
     // --- Internal Wires ---
@@ -19,6 +20,10 @@ module soc_top (
     wire        uart_valid, uart_ready;
     wire [31:0] uart_rdata;
 
+    // NEW: GPIO Slave Signals
+    wire        gpio_valid, gpio_ready;
+    wire [31:0] gpio_rdata;
+
     // --- Module Instantiations ---
     cpu_wrapper u_cpu (
         .clk(clk), .resetn(resetn), .mem_valid(cpu_valid), .mem_instr(),
@@ -31,7 +36,8 @@ module soc_top (
         .cpu_wstrb(cpu_wstrb), .cpu_ready(cpu_ready), .cpu_rdata(cpu_rdata),
         .rom_valid(rom_valid), .rom_ready(rom_ready), .rom_rdata(rom_rdata),
         .ram_valid(ram_valid), .ram_ready(ram_ready), .ram_rdata(ram_rdata),
-        .uart_valid(uart_valid), .uart_ready(uart_ready), .uart_rdata(uart_rdata)
+        .uart_valid(uart_valid), .uart_ready(uart_ready), .uart_rdata(uart_rdata),
+        .gpio_valid(gpio_valid), .gpio_ready(gpio_ready), .gpio_rdata(gpio_rdata)
     );
 
     boot_rom u_rom (
@@ -44,18 +50,23 @@ module soc_top (
         .wdata(cpu_wdata), .wstrb(cpu_wstrb), .ready(ram_ready), .rdata(ram_rdata)
     );
 
-    // 5. UART Peripheral
     uart_top u_uart (
+        .clk(clk), .resetn(resetn), .valid(uart_valid), .addr(cpu_addr),
+        .wdata(cpu_wdata), .wstrb(cpu_wstrb), .ready(uart_ready),
+        .rdata(uart_rdata), .tx(tx), .rx(rx)
+    );
+
+    // 6. GPIO Peripheral
+    gpio_top u_gpio (
         .clk    (clk),
         .resetn (resetn),
-        .valid  (uart_valid),
+        .valid  (gpio_valid),
         .addr   (cpu_addr),
         .wdata  (cpu_wdata),
         .wstrb  (cpu_wstrb),
-        .ready  (uart_ready),
-        .rdata  (uart_rdata),
-        .tx     (tx),
-        .rx     (rx)         // NEW: Connect the RX pin
+        .ready  (gpio_ready),
+        .rdata  (gpio_rdata),
+        .gpio   (gpio)
     );
 
 endmodule

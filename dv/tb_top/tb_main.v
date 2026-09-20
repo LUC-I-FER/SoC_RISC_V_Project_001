@@ -4,21 +4,21 @@ module tb_main;
     reg  clk;
     reg  resetn;
     wire tx;
-    reg  rx; // NEW: Register to drive the RX input
+    reg  rx;
+    wire [7:0] gpio; // NEW: Wire to observe the bidirectional GPIO port
 
     soc_top u_soc (
         .clk    (clk),
         .resetn (resetn),
         .tx     (tx),
-        .rx     (rx)     // Connect the RX pin
+        .rx     (rx),
+        .gpio   (gpio)   // NEW: Connect the GPIO port
     );
 
     // 1. Generate Clock (100 MHz -> 10ns period)
     always #5 clk = ~clk;
 
     // 2. Task to simulate an external device sending a UART byte
-    // 115200 baud on a 100MHz clock = 868 clock cycles per bit.
-    // 868 cycles * 10ns per cycle = 8680ns per bit.
     task send_uart_byte;
         input [7:0] char_data;
         integer i;
@@ -41,7 +41,7 @@ module tb_main;
 
         clk = 0;
         resetn = 0;
-        rx = 1; // UART idles HIGH
+        rx = 1;
 
         $display("--- Powering On SoC ---");
         #20;
@@ -52,9 +52,9 @@ module tb_main;
         #20000;
 
         $display("--- Injecting 'K' (0x4B) into RX pin ---");
-        send_uart_byte(8'h4B); // Send the letter 'K'
+        send_uart_byte(8'h4B);
 
-        // Wait enough time for the CPU to process the received byte and echo it
+        // Wait enough time for the CPU to process and output GPIO toggles
         #200000;
 
         $display("--- Simulation Complete ---");
