@@ -1,5 +1,5 @@
 module ram #(
-    parameter ADDR_WIDTH = 10
+    parameter integer ADDR_WIDTH = 10
 ) (
     input  wire        clk,
     input  wire        valid,
