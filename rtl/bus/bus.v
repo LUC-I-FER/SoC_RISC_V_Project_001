@@ -15,7 +15,7 @@ module bus (
     // RAM Slave Interface (Adress: 0x1000_0000 - 0x1FFF_FFFF)
     output wire        ram_valid,
     input wire         ram_ready,
-    input wire [31:0]  ram_rdata
+    input wire [31:0]  ram_rdata,
 
     // UART Slave Interface (Address: 0x2000_0000 to 0x2FFF_FFFF)
     output wire        uart_valid,

@@ -90,7 +90,7 @@ module soc_top (
     // 5. UART Peripherals
     uart_top u_uart (
         .clk    (clk),
-        .resetn (resetn),
+        .reset_n (resetn),
         .valid  (uart_valid),
         .addr   (cpu_addr),
         .wdata  (cpu_wdata),

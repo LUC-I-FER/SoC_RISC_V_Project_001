@@ -24,7 +24,7 @@ module uart_top(
         .BAUD_RATE(115200)
     ) u_tx (
         .clk      (clk),
-        .resetn   (resetn),
+        .reset_n   (resetn),
         .tx_start (tx_start),
         .tx_data  (tx_data_reg),
         .tx_busy  (tx_busy),
