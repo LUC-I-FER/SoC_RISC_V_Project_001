@@ -3,7 +3,7 @@ module uart_tx #(
     parameter integer BAUD_RATE = 115200
 )(
     input wire       clk,
-    input wire       reset_n,
+    input wire       resetn,
 
     // control interface from the memory mapped registers
     input wire       tx_start,
@@ -28,7 +28,7 @@ module uart_tx #(
     reg [7:0]  tx_data_reg;
 
     always @(posedge clk) begin
-        if (!reset_n) begin
+        if (!resetn) begin
             state       <= s_IDLE;
             tx          <= 1'b1; // idle state of uart is HIGH
             tx_busy     <= 1'b0;
