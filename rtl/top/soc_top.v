@@ -1,6 +1,7 @@
 module soc_top (
-    input wire clk,
-    input wire resetn
+    input  wire clk,
+    input  wire resetn,
+    output wire tx
 );
 
     // --- Internal Wires ---
@@ -22,6 +23,11 @@ module soc_top (
     wire        ram_valid;
     wire        ram_ready;
     wire [31:0] ram_rdata;
+
+    // UART Slave Signals
+    wire        uart_valid;
+    wire        uart_ready;
+    wire [31:0] uart_rdata;
 
 
     // --- Module Instantiations ---
@@ -54,7 +60,11 @@ module soc_top (
 
         .ram_valid (ram_valid),
         .ram_ready (ram_ready),
-        .ram_rdata (ram_rdata)
+        .ram_rdata (ram_rdata),
+
+        .uart_valid (uart_valid),
+        .uart_ready (uart_ready),
+        .uart_rdata (uart_rdata)
     );
 
     // 3. Boot ROM
@@ -75,6 +85,19 @@ module soc_top (
         .wstrb (cpu_wstrb),
         .ready (ram_ready),
         .rdata (ram_rdata)
+    );
+
+    // 5. UART Peripherals
+    uart_top u_uart (
+        .clk    (clk),
+        .resetn (resetn),
+        .valid  (uart_valid),
+        .addr   (cpu_addr),
+        .wdata  (cpu_wdata),
+        .wstrb  (cpu_wstrb),
+        .ready  (uart_ready),
+        .rdata  (uart_rdata),
+        .tx     (tx)
     );
 
 endmodule
