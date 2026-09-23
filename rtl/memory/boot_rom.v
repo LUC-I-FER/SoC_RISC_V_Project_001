@@ -13,7 +13,8 @@ module boot_rom(
 
     always @(posedge clk) begin
         if (valid) begin
-            rdata <= memory[addr[9:2]];
+            // Change this from addr[9:2] to addr[11:2]
+            rdata <= memory[addr[11:2]]; 
             ready <= 1'b1;
         end else begin
             ready <= 1'b0;
