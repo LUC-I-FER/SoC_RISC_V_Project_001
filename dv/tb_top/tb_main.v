@@ -45,7 +45,7 @@ module tb_main;
         end
     endtask
 
-    // --- NEW: Simulated SPI Sensor (Mode 0 Slave) ---
+    // --- Simulated SPI Sensor (Mode 0 Slave) ---
     reg [7:0] sensor_shift_reg;
     reg sensor_miso;
     
@@ -67,6 +67,26 @@ module tb_main;
     end
     // ------------------------------------------------
 
+    // --- NEW: UART Monitor (Prints SoC TX to Terminal) ---
+    reg [7:0] rx_char;
+    integer rx_bit;
+    
+    always @(negedge tx) begin
+        // Wait half a bit period (4340ns) to center on the start bit
+        #4340;
+        if (tx == 0) begin
+            // Sample the 8 data bits
+            for (rx_bit = 0; rx_bit < 8; rx_bit = rx_bit + 1) begin
+                #8680;
+                rx_char[rx_bit] = tx;
+            end
+            // Wait for the stop bit
+            #8680;
+            $write("%c", rx_char); // Print the received ASCII character
+        end
+    end
+    // ------------------------------------------------------
+
     // 3. Main Simulation Block
     initial begin
         $dumpfile("outputs/vcd_files/waveform.vcd");
@@ -81,10 +101,10 @@ module tb_main;
         resetn = 1;
         $display("--- Reset Released. CPU Running ---");
 
-        // Give the CPU time to boot, run initialization, and execute SPI C-code
-        #50000;
+        // INCREASE THIS: Give the CPU 2 milliseconds to boot and run SPI tests
+        #10000000; 
 
-        $display("--- Simulation Complete ---");
+        $display("\n--- Simulation Complete ---");
         $finish;
     end
 endmodule
