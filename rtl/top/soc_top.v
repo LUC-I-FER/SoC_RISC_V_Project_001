@@ -4,11 +4,13 @@ module soc_top (
     output wire        tx,
     input  wire        rx,
     inout  wire [7:0]  gpio,
-    // NEW: SPI External Pins
     output wire        sck,
     output wire        mosi,
     input  wire        miso,
-    output wire        cs
+    output wire        cs,
+    // NEW: I2C External Pins
+    inout  wire        sda,
+    inout  wire        scl
 );
 
     // --- Internal Wires ---
@@ -28,9 +30,12 @@ module soc_top (
     wire        gpio_valid, gpio_ready;
     wire [31:0] gpio_rdata;
 
-    // NEW: SPI Slave Signals
     wire        spi_valid, spi_ready;
     wire [31:0] spi_rdata;
+
+    // NEW: I2C Slave Signals
+    wire        i2c_valid, i2c_ready;
+    wire [31:0] i2c_rdata;
 
     // --- Module Instantiations ---
     cpu_wrapper u_cpu (
@@ -46,7 +51,8 @@ module soc_top (
         .ram_valid(ram_valid), .ram_ready(ram_ready), .ram_rdata(ram_rdata),
         .uart_valid(uart_valid), .uart_ready(uart_ready), .uart_rdata(uart_rdata),
         .gpio_valid(gpio_valid), .gpio_ready(gpio_ready), .gpio_rdata(gpio_rdata),
-        .spi_valid(spi_valid), .spi_ready(spi_ready), .spi_rdata(spi_rdata) // NEW
+        .spi_valid(spi_valid), .spi_ready(spi_ready), .spi_rdata(spi_rdata),
+        .i2c_valid(i2c_valid), .i2c_ready(i2c_ready), .i2c_rdata(i2c_rdata) // NEW
     );
 
     boot_rom u_rom (
@@ -71,20 +77,24 @@ module soc_top (
         .rdata(gpio_rdata), .gpio(gpio)
     );
 
-    // 7. SPI Peripheral
     spi_top u_spi (
+        .clk(clk), .resetn(resetn), .valid(spi_valid), .addr(cpu_addr),
+        .wdata(cpu_wdata), .wstrb(cpu_wstrb), .ready(spi_ready),
+        .rdata(spi_rdata), .sck(sck), .mosi(mosi), .miso(miso), .cs(cs)
+    );
+
+    // 8. I2C Peripheral
+    i2c_top u_i2c (
         .clk    (clk),
         .resetn (resetn),
-        .valid  (spi_valid),
+        .valid  (i2c_valid),
         .addr   (cpu_addr),
         .wdata  (cpu_wdata),
         .wstrb  (cpu_wstrb),
-        .ready  (spi_ready),
-        .rdata  (spi_rdata),
-        .sck    (sck),
-        .mosi   (mosi),
-        .miso   (miso),
-        .cs     (cs)
+        .ready  (i2c_ready),
+        .rdata  (i2c_rdata),
+        .sda    (sda),
+        .scl    (scl)
     );
 
 endmodule

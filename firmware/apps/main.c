@@ -13,7 +13,6 @@ void uart_puts(const char *str) {
     while (*str) uart_putc(*str++);
 }
 
-// Helper to print hexadecimal numbers over UART
 void uart_print_hex(unsigned char val) {
     const char hex_chars[] = "0123456789ABCDEF";
     uart_putc('0');
@@ -29,48 +28,75 @@ void uart_print_hex(unsigned char val) {
 #define SPI_STATUS     (*((volatile unsigned int *)(SPI_BASE + 0x08)))
 
 void spi_set_cs(unsigned char state) {
-    SPI_CS = state; // 0 = Active (Low), 1 = Inactive (High)
+    SPI_CS = state;
 }
 
 unsigned char spi_transfer(unsigned char data) {
-    // 1. Write data to the TX register to start the hardware shift engine
     SPI_DATA = data;
-    
-    // 2. Wait until the hardware clears the busy flag (Bit 0)
     while (SPI_STATUS & 0x01);
-    
-    // 3. The transaction is complete. Return the byte captured from MISO
     return SPI_DATA;
+}
+
+// --- I2C Driver ---
+#define I2C_BASE       0x50000000
+#define I2C_DATA       (*((volatile unsigned int *)(I2C_BASE + 0x00)))
+#define I2C_CMD        (*((volatile unsigned int *)(I2C_BASE + 0x04)))
+#define I2C_STATUS     (*((volatile unsigned int *)(I2C_BASE + 0x08)))
+
+void i2c_wait() {
+    while (I2C_STATUS & 0x01); // Wait while Busy flag is set
+}
+
+void i2c_start() {
+    I2C_CMD = 0x01;
+    i2c_wait();
+}
+
+void i2c_stop() {
+    I2C_CMD = 0x02;
+    i2c_wait();
+}
+
+// Returns 0 if ACK received, 1 if NACK
+unsigned char i2c_write(unsigned char data) {
+    I2C_DATA = data;
+    I2C_CMD = 0x03;
+    i2c_wait();
+    return (I2C_STATUS >> 1) & 0x01; 
 }
 
 // --- Main Application ---
 int main(void) {
-    uart_puts("SoC Booted! Testing SPI...\n");
+    uart_puts("SoC Booted!\n");
 
-    // 1. Initialize SPI bus (CS High / Sensor asleep)
+    // --- Test SPI ---
     spi_set_cs(1);
-
-    // 2. Wake up the sensor by pulling CS Low
     spi_set_cs(0);
-
-    // 3. Send a dummy byte (0xFF) to clock the data out of the sensor
-    unsigned char response = spi_transfer(0xFF);
-
-    // 4. Release the sensor by pulling CS High
+    unsigned char spi_res = spi_transfer(0xFF);
     spi_set_cs(1);
-
-    // 5. Print the result
-    uart_puts("SPI Sensor Response: ");
-    uart_print_hex(response);
-    uart_puts("\n");
-
-    if (response == 0xA5) {
+    
+    if (spi_res == 0xA5) {
         uart_puts("SPI Master Test: PASSED\n");
     } else {
         uart_puts("SPI Master Test: FAILED\n");
     }
 
+    // --- Test I2C ---
+    uart_puts("Testing I2C Bus...\n");
+    
+    i2c_start();
+    // Write to a hypothetical I2C device at address 0x3C (0x3C shifted left by 1 + 0 for write)
+    unsigned char ack = i2c_write(0x3C << 1); 
+    i2c_stop();
+
+    if (ack == 0) {
+        uart_puts("I2C Master Test: PASSED (ACK Received)\n");
+    } else {
+        uart_puts("I2C Master Test: FAILED (NACK)\n");
+    }
+
     // Halt CPU
+    uart_puts("All tests complete. CPU Halted.\n");
     while(1);
     return 0;
 }
