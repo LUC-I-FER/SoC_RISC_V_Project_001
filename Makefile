@@ -7,6 +7,7 @@ RV_CFLAGS  = -march=rv32i -mabi=ilp32 -O0 -nostartfiles -nostdlib -T firmware/li
 FW_SRC = firmware/apps/start.S firmware/apps/main.c
 FW_ELF = firmware/apps/main.elf
 FW_HEX = firmware/hex/boot.hex
+FW_MEM = firmware/hex/boot.mem
 
 # --- Simulation Build Settings ---
 OUT_DIR = outputs/output_file
@@ -23,7 +24,7 @@ CORE_SRC = third_party/picorv32/picorv32.v
 # Group all sources for dependencies
 ALL_SRCS = $(TB_SRC) $(RTL_SRCS) $(CORE_SRC)
 
-.PHONY: all compile simulate waves clean firmware
+.PHONY: all compile simulate waves clean firmware mem
 
 all: simulate
 
@@ -41,10 +42,10 @@ waves:
 	gtkwave $(VCD_DIR)/waveform.vcd &
 
 clean:
-	rm -rf outputs/ firmware/hex/ firmware/apps/*.elf
+	rm -rf outputs/ firmware/hex/ firmware/apps/*.elf vivado_workspace/ *.jou *.log
 
 # --- Firmware Targets ---
-firmware: $(FW_HEX)
+firmware: $(FW_HEX) $(FW_MEM)
 
 $(FW_ELF): $(FW_SRC)
 	$(RV_GCC) $(RV_CFLAGS) -o $(FW_ELF) $(FW_SRC)
@@ -53,3 +54,7 @@ $(FW_HEX): $(FW_ELF)
 	mkdir -p firmware/hex
 	$(RV_OBJCOPY) -O verilog --verilog-data-width=4 $(FW_ELF) $(FW_HEX)
 	riscv64-unknown-elf-objdump -d $(FW_ELF) > firmware/apps/main.dump
+
+# Target for Vivado synthesis (.mem format)
+$(FW_MEM): $(FW_HEX)
+	cp $(FW_HEX) $(FW_MEM)
