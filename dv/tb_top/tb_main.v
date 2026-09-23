@@ -3,16 +3,27 @@
 module tb_main;
     reg  clk;
     reg  resetn;
+    
     wire tx;
     reg  rx;
-    wire [7:0] gpio; // NEW: Wire to observe the bidirectional GPIO port
+    wire [7:0] gpio;
+    
+    // NEW: SPI External Pins
+    wire sck;
+    wire mosi;
+    wire cs;
+    wire miso;
 
     soc_top u_soc (
         .clk    (clk),
         .resetn (resetn),
         .tx     (tx),
         .rx     (rx),
-        .gpio   (gpio)   // NEW: Connect the GPIO port
+        .gpio   (gpio),
+        .sck    (sck),   // NEW
+        .mosi   (mosi),  // NEW
+        .miso   (miso),  // NEW
+        .cs     (cs)     // NEW
     );
 
     // 1. Generate Clock (100 MHz -> 10ns period)
@@ -23,16 +34,38 @@ module tb_main;
         input [7:0] char_data;
         integer i;
         begin
-            rx = 0;       // Start bit
+            rx = 0;
             #8680;
             for (i = 0; i < 8; i = i + 1) begin
-                rx = char_data[i]; // Data bits (LSB first)
+                rx = char_data[i];
                 #8680;
             end
-            rx = 1;       // Stop bit
+            rx = 1;
             #8680;
         end
     endtask
+
+    // --- NEW: Simulated SPI Sensor (Mode 0 Slave) ---
+    reg [7:0] sensor_shift_reg;
+    reg sensor_miso;
+    
+    // Drive the physical MISO wire with our simulated sensor's output pin
+    assign miso = (!cs) ? sensor_miso : 1'bz;
+
+    // When CS goes LOW, the sensor wakes up and prepares its first bit
+    always @(negedge cs) begin
+        sensor_shift_reg = 8'hA5; // The sensor always replies with 0xA5
+        sensor_miso = sensor_shift_reg[7]; // Put MSB on the MISO line immediately
+    end
+
+    // On the falling edge of SCK, shift out the next bit
+    always @(negedge sck) begin
+        if (!cs) begin
+            sensor_shift_reg = {sensor_shift_reg[6:0], 1'b0};
+            sensor_miso = sensor_shift_reg[7];
+        end
+    end
+    // ------------------------------------------------
 
     // 3. Main Simulation Block
     initial begin
@@ -48,14 +81,8 @@ module tb_main;
         resetn = 1;
         $display("--- Reset Released. CPU Running ---");
 
-        // Give the CPU time to boot up and run initialization code
-        #20000;
-
-        $display("--- Injecting 'K' (0x4B) into RX pin ---");
-        send_uart_byte(8'h4B);
-
-        // Wait enough time for the CPU to process and output GPIO toggles
-        #200000;
+        // Give the CPU time to boot, run initialization, and execute SPI C-code
+        #50000;
 
         $display("--- Simulation Complete ---");
         $finish;

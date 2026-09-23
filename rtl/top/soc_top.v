@@ -3,7 +3,12 @@ module soc_top (
     input  wire        resetn,
     output wire        tx,
     input  wire        rx,
-    inout  wire [7:0]  gpio        // NEW: 8-bit bidirectional GPIO port
+    inout  wire [7:0]  gpio,
+    // NEW: SPI External Pins
+    output wire        sck,
+    output wire        mosi,
+    input  wire        miso,
+    output wire        cs
 );
 
     // --- Internal Wires ---
@@ -20,9 +25,12 @@ module soc_top (
     wire        uart_valid, uart_ready;
     wire [31:0] uart_rdata;
 
-    // NEW: GPIO Slave Signals
     wire        gpio_valid, gpio_ready;
     wire [31:0] gpio_rdata;
+
+    // NEW: SPI Slave Signals
+    wire        spi_valid, spi_ready;
+    wire [31:0] spi_rdata;
 
     // --- Module Instantiations ---
     cpu_wrapper u_cpu (
@@ -37,7 +45,8 @@ module soc_top (
         .rom_valid(rom_valid), .rom_ready(rom_ready), .rom_rdata(rom_rdata),
         .ram_valid(ram_valid), .ram_ready(ram_ready), .ram_rdata(ram_rdata),
         .uart_valid(uart_valid), .uart_ready(uart_ready), .uart_rdata(uart_rdata),
-        .gpio_valid(gpio_valid), .gpio_ready(gpio_ready), .gpio_rdata(gpio_rdata)
+        .gpio_valid(gpio_valid), .gpio_ready(gpio_ready), .gpio_rdata(gpio_rdata),
+        .spi_valid(spi_valid), .spi_ready(spi_ready), .spi_rdata(spi_rdata) // NEW
     );
 
     boot_rom u_rom (
@@ -56,17 +65,26 @@ module soc_top (
         .rdata(uart_rdata), .tx(tx), .rx(rx)
     );
 
-    // 6. GPIO Peripheral
     gpio_top u_gpio (
+        .clk(clk), .resetn(resetn), .valid(gpio_valid), .addr(cpu_addr),
+        .wdata(cpu_wdata), .wstrb(cpu_wstrb), .ready(gpio_ready),
+        .rdata(gpio_rdata), .gpio(gpio)
+    );
+
+    // 7. SPI Peripheral
+    spi_top u_spi (
         .clk    (clk),
         .resetn (resetn),
-        .valid  (gpio_valid),
+        .valid  (spi_valid),
         .addr   (cpu_addr),
         .wdata  (cpu_wdata),
         .wstrb  (cpu_wstrb),
-        .ready  (gpio_ready),
-        .rdata  (gpio_rdata),
-        .gpio   (gpio)
+        .ready  (spi_ready),
+        .rdata  (spi_rdata),
+        .sck    (sck),
+        .mosi   (mosi),
+        .miso   (miso),
+        .cs     (cs)
     );
 
 endmodule

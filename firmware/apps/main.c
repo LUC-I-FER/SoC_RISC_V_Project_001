@@ -13,52 +13,64 @@ void uart_puts(const char *str) {
     while (*str) uart_putc(*str++);
 }
 
-char uart_getc(void) {
-    while (!(UART_STATUS & 0x02));
-    return UART_RX_DATA;
+// Helper to print hexadecimal numbers over UART
+void uart_print_hex(unsigned char val) {
+    const char hex_chars[] = "0123456789ABCDEF";
+    uart_putc('0');
+    uart_putc('x');
+    uart_putc(hex_chars[(val >> 4) & 0x0F]);
+    uart_putc(hex_chars[val & 0x0F]);
 }
 
-// --- GPIO Driver ---
-#define GPIO_BASE 0x30000000
-#define GPIO_DIR  (*((volatile unsigned int *)(GPIO_BASE + 0x00)))
-#define GPIO_OUT  (*((volatile unsigned int *)(GPIO_BASE + 0x04)))
-#define GPIO_IN   (*((volatile unsigned int *)(GPIO_BASE + 0x08)))
+// --- SPI Driver ---
+#define SPI_BASE       0x40000000
+#define SPI_DATA       (*((volatile unsigned int *)(SPI_BASE + 0x00)))
+#define SPI_CS         (*((volatile unsigned int *)(SPI_BASE + 0x04)))
+#define SPI_STATUS     (*((volatile unsigned int *)(SPI_BASE + 0x08)))
 
-void gpio_set_dir(unsigned char dir) {
-    GPIO_DIR = dir;
+void spi_set_cs(unsigned char state) {
+    SPI_CS = state; // 0 = Active (Low), 1 = Inactive (High)
 }
 
-void gpio_write(unsigned char data) {
-    GPIO_OUT = data;
-}
-
-unsigned char gpio_read(void) {
-    return GPIO_IN;
+unsigned char spi_transfer(unsigned char data) {
+    // 1. Write data to the TX register to start the hardware shift engine
+    SPI_DATA = data;
+    
+    // 2. Wait until the hardware clears the busy flag (Bit 0)
+    while (SPI_STATUS & 0x01);
+    
+    // 3. The transaction is complete. Return the byte captured from MISO
+    return SPI_DATA;
 }
 
 // --- Main Application ---
 int main(void) {
-    uart_puts("SoC Booted! Testing GPIO...\n");
+    uart_puts("SoC Booted! Testing SPI...\n");
 
-    // 1. Set pins 0-3 as Outputs, and pins 4-7 as Inputs
-    // Binary: 0000_1111 = 0x0F
-    gpio_set_dir(0x0F); 
-    
-    // 2. Drive pins 0 and 2 HIGH (Binary: 0000_0101 = 0x05)
-    gpio_write(0x05);
-    uart_puts("GPIO LEDs set to 0x05. Waiting for UART input...\n");
+    // 1. Initialize SPI bus (CS High / Sensor asleep)
+    spi_set_cs(1);
 
-    while(1) {
-        // 3. Halt the CPU until the testbench sends a character
-        char c = uart_getc(); 
-        
-        // 4. Echo the character back over TX
-        uart_putc(c);         
-        
-        // 5. Change the GPIO pattern to prove we received it
-        // Drive pins 1 and 3 HIGH (Binary: 0000_1010 = 0x0A)
-        gpio_write(0x0A);
+    // 2. Wake up the sensor by pulling CS Low
+    spi_set_cs(0);
+
+    // 3. Send a dummy byte (0xFF) to clock the data out of the sensor
+    unsigned char response = spi_transfer(0xFF);
+
+    // 4. Release the sensor by pulling CS High
+    spi_set_cs(1);
+
+    // 5. Print the result
+    uart_puts("SPI Sensor Response: ");
+    uart_print_hex(response);
+    uart_puts("\n");
+
+    if (response == 0xA5) {
+        uart_puts("SPI Master Test: PASSED\n");
+    } else {
+        uart_puts("SPI Master Test: FAILED\n");
     }
-    
+
+    // Halt CPU
+    while(1);
     return 0;
 }
