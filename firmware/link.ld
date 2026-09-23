@@ -1,12 +1,8 @@
 OUTPUT_ARCH(riscv)
 ENTRY(_start)
 
-MEMORY
-{
-    /* 0x00000000: 1KB Boot ROM */
-    ROM (rx)  : ORIGIN = 0x00000000, LENGTH = 1K 
-    
-    /* 0x10000000: 4KB Data RAM */
+MEMORY {
+    ROM (rx)  : ORIGIN = 0x00000000, LENGTH = 4K /* Increased from previous size */
     RAM (rwx) : ORIGIN = 0x10000000, LENGTH = 4K
 }
 
